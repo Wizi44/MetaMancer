@@ -1,4 +1,4 @@
-const MODULE_ADDRESS = "0x<your-account-address>"; // Replace with your deployed address
+const MODULE_ADDRESS = "0xf789e12a7249e0f93c3770d4cc4ec1d3ede34d02b8247d7003e0d7ebe8d93f95"; // Replace with your deployed address
 const MODULE_NAME = "metamancer";
 const DEVNET_NODE = "https://fullnode.devnet.aptoslabs.com/v1";
 
