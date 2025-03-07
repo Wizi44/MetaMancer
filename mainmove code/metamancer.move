@@ -6,8 +6,8 @@ module hackathon_agent::metamancer {
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::timestamp;
     use aptos_token_objects::token::{Self, Token};
-    // Mock Move AI Agent Kit import (replace with real kit module)
-    use hackathon_agent::ai_oracle; // Placeholder—swap with kit's module
+    // Move AI Agent Kit integration
+    use move_ai_agent_kit::oracle; 
 
     // Player's game state
     struct PlayerState has key {
@@ -16,24 +16,24 @@ module hackathon_agent::metamancer {
         last_trade: u64,         // Timestamp of last trade (for cooldown)
     }
 
-    // NFT metadata for tracking
+    // NFT metadata
     struct NFT has store, drop {
         collection: String,
         name: String,
-        value: u64, // Current market value (simulated)
+        value: u64, // Market value (simulated)
     }
 
-    // Initialize player state
+    // Initialize player
     public entry fun init_player(account: &signer) {
         let state = PlayerState {
-            coins: 1000, // Starting coins
+            coins: 1000,
             owned_nfts: vector::empty<NFT>(),
             last_trade: timestamp::now_seconds()
         };
         move_to(account, state);
     }
 
-    // AI Agent: Buy an NFT with AI-driven logic
+    // Buy NFT with AI decision
     public entry fun buy_nft(
         account: &signer,
         creator: address,
@@ -45,12 +45,11 @@ module hackathon_agent::metamancer {
         let state = borrow_global_mut<PlayerState>(addr);
         let now = timestamp::now_seconds();
 
-        // Cooldown check: 60-second wait between trades
-        assert!(now >= state.last_trade + 60, 1);
+        assert!(now >= state.last_trade + 60, 1); // 60-sec cooldown
 
-        // Call Move AI Agent Kit for AI decision
-        let ai_threshold = ai_oracle::get_ai_decision(addr, price);
-        if (price <= ai_threshold || state.coins > 2000) { // AI decides buy threshold
+        // AI decision from Move AI Agent Kit
+        let ai_threshold = oracle::get_ai_decision(addr, price); 
+        if (price <= ai_threshold || state.coins > 2000) {
             coin::transfer<AptosCoin>(account, creator, price);
             token::transfer(account, creator, collection, name, 1);
             let nft = NFT { collection, name, value: price };
@@ -60,7 +59,7 @@ module hackathon_agent::metamancer {
         }
     }
 
-    // AI Agent: Sell an NFT with profit check
+    // Sell NFT with AI decision
     public entry fun sell_nft(
         account: &signer,
         buyer: address,
@@ -72,18 +71,15 @@ module hackathon_agent::metamancer {
         let state = borrow_global_mut<PlayerState>(addr);
         let now = timestamp::now_seconds();
 
-        // Cooldown check: 60-second wait between trades
-        assert!(now >= state.last_trade + 60, 1);
+        assert!(now >= state.last_trade + 60, 1); // 60-sec cooldown
 
-        // Find and remove NFT, check AI-driven sell condition
         let i = 0;
         let len = vector::length(&state.owned_nfts);
         while (i < len) {
             let nft = vector::borrow(&state.owned_nfts, i);
             if (nft.collection == collection && nft.name == name) {
-                // AI decides sell threshold
-                let ai_sell_threshold = ai_oracle::get_ai_decision(addr, offer_price);
-                if (offer_price >= ai_sell_threshold) { // Sell if AI approves
+                let ai_sell_threshold = oracle::get_ai_decision(addr, offer_price);
+                if (offer_price >= ai_sell_threshold) {
                     token::transfer(account, buyer, collection, name, 1);
                     coin::transfer<AptosCoin>(buyer, addr, offer_price);
                     state.coins = state.coins + offer_price;
@@ -96,11 +92,11 @@ module hackathon_agent::metamancer {
         }
     }
 
-    // Play-to-earn: Earn coins based on NFT count
+    // Earn play-to-earn rewards
     public entry fun earn_rewards(account: &signer) acquires PlayerState {
         let state = borrow_global_mut<PlayerState>(signer::address_of(account));
         let nft_count = vector::length(&state.owned_nfts);
-        let reward = nft_count * 50; // 50 coins per NFT owned
+        let reward = nft_count * 50;
         state.coins = state.coins + reward;
     }
 
