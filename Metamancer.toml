@@ -1,0 +1,17 @@
+[package]
+name = "metamancer"
+version = "0.1.0"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "main"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dependencies.AptosTokenObjects]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "main"
+subdir = "aptos-move/framework/aptos-token-objects"
+
+[dependencies.MoveAIAgentKit]
+git = "https://github.com/MetaMove/move-agent-kit.git" 
+rev = "main" 
