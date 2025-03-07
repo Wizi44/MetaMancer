@@ -1,160 +1,90 @@
-import React, { useState } from "react";
-import {
-  AptosClient,
-  Types,
-} from "aptos";
-import {
-  useWallet,
-  WalletProvider,
-  AptosWalletAdapter,
-} from "@aptos-labs/wallet-adapter-react";
-import { Button, Spin } from "antd";
-
 const MODULE_ADDRESS = "0x<your-account-address>"; // Replace with your deployed address
-const MODULE_NAME = "nft_trading_agent";
+const MODULE_NAME = "metamancer";
 const DEVNET_NODE = "https://fullnode.devnet.aptoslabs.com/v1";
 
 const client = new AptosClient(DEVNET_NODE);
+let account = null;
 
-function App() {
-  const { account, signAndSubmitTransaction, connect, disconnect } = useWallet();
-  const [loading, setLoading] = useState(false);
-  const [state, setState] = useState({ coins: 0, nftCount: 0 });
+const connectWalletBtn = document.getElementById("connect-wallet");
+const disconnectWalletBtn = document.getElementById("disconnect-wallet");
+const addressDisplay = document.getElementById("address");
+const actionsDiv = document.getElementById("actions");
+const initBtn = document.getElementById("init-player");
+const buyBtn = document.getElementById("buy-nft");
+const sellBtn = document.getElementById("sell-nft");
+const earnBtn = document.getElementById("earn-rewards");
+const coinsDisplay = document.getElementById("coins");
+const nftCountDisplay = document.getElementById("nft-count");
+const loadingDiv = document.getElementById("loading");
 
-  // Fetch player state
-  const fetchState = async () => {
-    if (!account) return;
-    try {
-      const [coins, nftCount] = await client.view({
-        function: `${MODULE_ADDRESS}::${MODULE_NAME}::get_state`,
-        type_arguments: [],
-        arguments: [account.address],
-      });
-      setState({ coins: Number(coins), nftCount: Number(nftCount) });
-    } catch (e) {
-      console.error("Error fetching state:", e);
+async function connectWallet() {
+    if (!window.aptos) {
+        alert("Please install Petra Wallet extension!");
+        return;
     }
-  };
-
-  // Initialize player
-  const initPlayer = async () => {
-    setLoading(true);
     try {
-      const payload = {
-        type: "entry_function_payload",
-        function: `${MODULE_ADDRESS}::${MODULE_NAME}::init_player`,
-        type_arguments: [],
-        arguments: [],
-      };
-      const response = await signAndSubmitTransaction(payload);
-      await client.waitForTransaction(response.hash);
-      fetchState();
+        const response = await window.aptos.connect();
+        account = response;
+        addressDisplay.textContent = account.address;
+        connectWalletBtn.style.display = "none";
+        disconnectWalletBtn.style.display = "inline";
+        actionsDiv.style.display = "block";
+        await fetchState();
     } catch (e) {
-      console.error("Init failed:", e);
+        console.error("Connection failed:", e);
     }
-    setLoading(false);
-  };
-
-  // Buy NFT
-  const buyNFT = async () => {
-    setLoading(true);
-    try {
-      const payload = {
-        type: "entry_function_payload",
-        function: `${MODULE_ADDRESS}::${MODULE_NAME}::buy_nft`,
-        type_arguments: [],
-        arguments: [MODULE_ADDRESS, "MyGame", "Sword", "150"], // Creator = self for demo
-      };
-      const response = await signAndSubmitTransaction(payload);
-      await client.waitForTransaction(response.hash);
-      fetchState();
-    } catch (e) {
-      console.error("Buy failed:", e);
-    }
-    setLoading(false);
-  };
-
-  // Sell NFT
-  const sellNFT = async () => {
-    setLoading(true);
-    try {
-      const payload = {
-        type: "entry_function_payload",
-        function: `${MODULE_ADDRESS}::${MODULE_NAME}::sell_nft`,
-        type_arguments: [],
-        arguments: [MODULE_ADDRESS, "MyGame", "Sword", "350"], // Buyer = self for demo
-      };
-      const response = await signAndSubmitTransaction(payload);
-      await client.waitForTransaction(response.hash);
-      fetchState();
-    } catch (e) {
-      console.error("Sell failed:", e);
-    }
-    setLoading(false);
-  };
-
-  // Earn rewards
-  const earnRewards = async () => {
-    setLoading(true);
-    try {
-      const payload = {
-        type: "entry_function_payload",
-        function: `${MODULE_ADDRESS}::${MODULE_NAME}::earn_rewards`,
-        type_arguments: [],
-        arguments: [],
-      };
-      const response = await signAndSubmitTransaction(payload);
-      await client.waitForTransaction(response.hash);
-      fetchState();
-    } catch (e) {
-      console.error("Earn failed:", e);
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div style={{ padding: 20, textAlign: "center" }}>
-      <h1>NFT Trading Agent Demo</h1>
-      {!account ? (
-        <Button type="primary" onClick={() => connect("Petra")}>
-          Connect Petra Wallet
-        </Button>
-      ) : (
-        <>
-          <p>Address: {account.address}</p>
-          <Button onClick={disconnect}>Disconnect</Button>
-          <div style={{ margin: "20px 0" }}>
-            <Button onClick={initPlayer} disabled={loading}>
-              Initialize Player
-            </Button>
-            <Button onClick={buyNFT} disabled={loading} style={{ marginLeft: 10 }}>
-              Buy NFT (150 APT)
-            </Button>
-            <Button onClick={sellNFT} disabled={loading} style={{ marginLeft: 10 }}>
-              Sell NFT (350 APT)
-            </Button>
-            <Button onClick={earnRewards} disabled={loading} style={{ marginLeft: 10 }}>
-              Earn Rewards
-            </Button>
-          </div>
-          {loading && <Spin />}
-          <div>
-            <p>Coins: {state.coins} APT</p>
-            <p>NFTs Owned: {state.nftCount}</p>
-          </div>
-        </>
-      )}
-    </div>
-  );
 }
 
-const AppWithProvider = () => (
-  <WalletProvider
-    wallets={[new AptosWalletAdapter()]}
-    autoConnect={false}
-  >
-    <App />
-  </WalletProvider>
-);
+async function disconnectWallet() {
+    if (window.aptos) {
+        await window.aptos.disconnect();
+    }
+    account = null;
+    addressDisplay.textContent = "Not connected";
+    connectWalletBtn.style.display = "inline";
+    disconnectWalletBtn.style.display = "none";
+    actionsDiv.style.display = "none";
+    coinsDisplay.textContent = "0";
+    nftCountDisplay.textContent = "0";
+}
 
-export default AppWithProvider;
+async function fetchState() {
+    if (!account) return;
+    try {
+        const [coins, nftCount] = await client.view({
+            function: `${MODULE_ADDRESS}::${MODULE_NAME}::get_state`,
+            type_arguments: [],
+            arguments: [account.address],
+        });
+        coinsDisplay.textContent = coins;
+        nftCountDisplay.textContent = nftCount;
+    } catch (e) {
+        console.error("Fetch state failed:", e);
+    }
+}
+
+async function submitTransaction(functionName, args) {
+    if (!account) return;
+    loadingDiv.style.display = "block";
+    try {
+        const payload = {
+            type: "entry_function_payload",
+            function: `${MODULE_ADDRESS}::${MODULE_NAME}::${functionName}`,
+            type_arguments: [],
+            arguments: args,
+        };
+        const response = await window.aptos.signAndSubmitTransaction(payload);
+        await client.waitForTransaction(response.hash);
+        await fetchState();
+    } catch (e) {
+        console.error(`${functionName} failed:`, e);
+    }
+    loadingDiv.style.display = "none";
+}
+
+connectWalletBtn.addEventListener("click", connectWallet);
+disconnectWalletBtn.addEventListener("click", disconnectWallet);
+initBtn.addEventListener("click", () => submitTransaction("init_player", []));
+buyBtn.addEventListener("click", () => submitTransaction("buy_nft", [MODULE_ADDRESS, "MyGame", "Sword", "150"]));
+sellBtn.addEventListener("click", () => submitTransaction("sell_nft", [MODULE_ADDRESS, "MyGame", "Sword", "350"]));
+earnBtn.addEventListener("click", () => submitTransaction("earn_rewards", []));
