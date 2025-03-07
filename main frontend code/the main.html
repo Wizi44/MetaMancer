@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metamancer - NFT Trading Agent</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Metamancer - GameFi Agent</h1>
+        <div id="wallet-status">
+            <button id="connect-wallet">Connect Petra Wallet</button>
+            <p id="address">Not connected</p>
+            <button id="disconnect-wallet" style="display: none;">Disconnect</button>
+        </div>
+        <div id="actions" style="display: none;">
+            <button id="init-player">Initialize Player</button>
+            <button id="buy-nft">Buy NFT (150 APT)</button>
+            <button id="sell-nft">Sell NFT (350 APT)</button>
+            <button id="earn-rewards">Earn Rewards</button>
+        </div>
+        <div id="state">
+            <p>Coins: <span id="coins">0</span> APT</p>
+            <p>NFTs Owned: <span id="nft-count">0</span></p>
+        </div>
+        <div id="loading" style="display: none;">Loading...</div>
+    </div>
+    <script src="https://unpkg.com/@aptos-labs/aptos-client@0.0.2/dist/index.global.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
