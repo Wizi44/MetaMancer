@@ -1,0 +1,18 @@
+[build]
+  
+  base = "metamancer-frontend"
+  # Output directory for the built site (Netlify copies files here)
+  publish = "."
+  # No build command needed—your files are already static
+  command = "echo 'No build step required'"
+
+[dev]
+  # For local testing (optional)
+  command = "live-server"
+  port = 8080
+
+[[redirects]]
+  # Serve index.html for all routes (single-page app behavior)
+  from = "/*"
+  to = "/index.html"
+  status = 200
